@@ -17,7 +17,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 
 @RequiredArgsConstructor
 @Slf4j
-public class BucketScanner implements Runnable {
+class BucketScanner implements Runnable {
 
 	private final SchedulerConfig cfg;
 	private final TimeRanges timeRanges;
@@ -34,14 +34,17 @@ public class BucketScanner implements Runnable {
 					log.info("Processing {}", record);
 //					producer.send(new ProducerRecord<>(topic, partition, record.key(), record.value()));
 				}
-
-				Duration duration = timeRanges.forBucket(index);
-				log.debug("Sleeping for {}", duration);
-				TimeUnit.NANOSECONDS.sleep(duration.toNanos());
+				sleep();
 			}
 		} catch(InterruptException | InterruptedException ignored) {
 		}
 		log.info("Shutting down");
+	}
+
+	private void sleep() throws InterruptedException {
+		Duration duration = timeRanges.forBucket(index);
+		log.trace("Sleeping for {}", duration);
+		TimeUnit.NANOSECONDS.sleep(duration.toNanos());
 	}
 
 	private KafkaConsumer<String, String> consumer() {
