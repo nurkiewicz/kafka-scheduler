@@ -10,7 +10,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -24,12 +23,6 @@ public class Main {
 		String bootstrapServers = "127.0.0.1:9092";
 		String groupId = "kafka-scheduler";
 		String topic = "quickstart";
-		Properties consumerProps = new Properties();
-		consumerProps.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-		consumerProps.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-		consumerProps.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-		consumerProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-		consumerProps.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		int partition = 12;
 		try (KafkaProducer<String, String> producer = buildProducer(bootstrapServers);
 		     KafkaConsumer<String, String> consumer = buildConsumer(bootstrapServers, groupId)) {
@@ -38,13 +31,13 @@ public class Main {
 			TopicPartition timeBucket = new TopicPartition(topic, partition);
 			consumer.assign(List.of(timeBucket));
 			//polling
-			while (true) {
+			while (!Thread.currentThread().isInterrupted()) {
 				ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
 				for (ConsumerRecord<String, String> record : records) {
 					log.info("Processing {}", record);
-					producer.send(new ProducerRecord<>(topic, partition, record.key(), record.value()));
+//					producer.send(new ProducerRecord<>(topic, partition, record.key(), record.value()));
 				}
-				consumer.commitSync();
+//				consumer.commitSync();
 			}
 		}
 	}
