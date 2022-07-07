@@ -9,9 +9,10 @@ public class Main {
 	private static final Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 
 	public static void main(String[] args) throws InterruptedException {
-		try (KafkaScheduler scheduler = new KafkaScheduler(new SchedulerConfig("127.0.0.1:9092", "quickstart", "kafka-scheduler"))) {
+		SchedulerConfig cfg = new SchedulerConfig("127.0.0.1:9092", "quickstart", "kafka-scheduler");
+		try (KafkaScheduler scheduler = new KafkaScheduler(cfg)) {
 			scheduler.start();
-			TimeUnit.SECONDS.sleep(10);
+			TimeUnit.SECONDS.sleep(60);
 		}
 	}
 }

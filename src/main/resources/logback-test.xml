@@ -9,6 +9,7 @@
 
     <logger name="org" level="INFO"/>
     <logger name="com" level="INFO"/>
+    <logger name="com.nurkiewicz" level="ALL"/>
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
