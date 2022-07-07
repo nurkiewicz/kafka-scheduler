@@ -43,7 +43,7 @@ class BucketScanner implements Runnable {
 
 	private void sleep() throws InterruptedException {
 		Duration duration = timeRanges.forBucket(index);
-		log.trace("Sleeping for {}", duration);
+		log.trace("Sleeping for {}ms", duration.toMillis());
 		TimeUnit.NANOSECONDS.sleep(duration.toNanos());
 	}
 

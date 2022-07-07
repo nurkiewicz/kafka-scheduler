@@ -11,7 +11,7 @@ class TimeRanges {
 
 	public TimeRanges(int buckets) {
 		List<Duration> thresholds = IntStream.range(0, buckets)
-				.mapToObj(bucket -> Duration.ofSeconds((int) Math.round(Math.pow(2, bucket))))
+				.mapToObj(bucket -> Duration.ofMillis((int) Math.round(1000 * Math.pow(2, bucket))))
 				.toList();
 		this.thresholds = new CopyOnWriteArrayList<>(thresholds);
 	}
