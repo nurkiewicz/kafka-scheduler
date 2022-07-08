@@ -1,6 +1,6 @@
 package com.nurkiewicz.kafkascheduler;
 
-import java.time.Instant;
+import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -12,16 +12,18 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 
 @Slf4j
 @RequiredArgsConstructor
-public class KafkaScheduler implements MessageScheduler, AutoCloseable {
+public class KafkaScheduler implements MessageScheduler {
 
 	private final List<Thread> scanners = new CopyOnWriteArrayList<>();
 	private final SchedulerConfig cfg;
 	private TimeRanges timeRanges;
+	private KafkaProducer<byte[], byte[]> producer;
 
 	void start() {
 		log.info("Starting. Configuration={}", cfg);
@@ -31,15 +33,17 @@ public class KafkaScheduler implements MessageScheduler, AutoCloseable {
 			timeRanges = new TimeRanges(count);
 			scanners.addAll(buildScanners(count));
 		}
-
+		this.producer = producer();
 	}
 
 	private List<Thread> buildScanners(int count) {
-		return IntStream.range(0, count).mapToObj(this::timeBucketScanner).toList();
+		return IntStream.range(0, count)
+				.mapToObj(Bucket::new)
+				.map(this::timeBucketScanner).toList();
 	}
 
-	private Thread timeBucketScanner(int index) {
-		Thread thread = new Thread(new BucketScanner(cfg, timeRanges, index), "Kafka-scheduler-Bucket-" + index);
+	private Thread timeBucketScanner(Bucket bucket) {
+		Thread thread = new Thread(new BucketScanner(cfg, timeRanges, bucket), "Kafka-scheduler-Bucket-" + bucket);
 		thread.start();
 		return thread;
 	}
@@ -52,13 +56,13 @@ public class KafkaScheduler implements MessageScheduler, AutoCloseable {
 		return new KafkaConsumer<>(consumerProps);
 	}
 
-	private KafkaProducer<String, String> producer() {
+	private KafkaProducer<byte[], byte[]> producer() {
 		Properties producerProps = new Properties();
 		producerProps.put("retries", 3);
 		producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, cfg.getBootstrapServers());
-		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
 		producerProps.put(ProducerConfig.ACKS_CONFIG, "1");
-		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
 		producerProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 120000);
 		producerProps.put(ProducerConfig.BATCH_SIZE_CONFIG, 1024);
 		producerProps.put(ProducerConfig.LINGER_MS_CONFIG, 0);
@@ -68,13 +72,19 @@ public class KafkaScheduler implements MessageScheduler, AutoCloseable {
 	}
 
 	@Override
-	public void sendLater(byte[] key, byte[] value, String topic, Instant when) {
-
+	public void sendLater(byte[] key, byte[] value, String topic, Duration delay) {
+		Bucket bucket = timeRanges.forDuration(delay);
+		ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(cfg.getTopic(), bucket.index(), key, value);
+		log.debug("Publishing. Bucket={}", bucket);
+		producer.send(record);
 	}
 
 	@Override
 	public void close() {
 		log.info("Closing");
 		scanners.forEach(Thread::interrupt);
+		if (producer != null) {
+			producer.close();
+		}
 	}
 }

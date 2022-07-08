@@ -1,9 +1,9 @@
 package com.nurkiewicz.kafkascheduler;
 
-import java.time.Instant;
+import java.time.Duration;
 
-public interface MessageScheduler {
+public interface MessageScheduler extends AutoCloseable{
 
-	void sendLater(byte[] key, byte[] value, String topic, Instant when);
+	void sendLater(byte[] key, byte[] value, String topic, Duration delay);
 
 }

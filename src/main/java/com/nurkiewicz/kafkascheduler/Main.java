@@ -1,5 +1,7 @@
 package com.nurkiewicz.kafkascheduler;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -12,6 +14,10 @@ public class Main {
 		SchedulerConfig cfg = new SchedulerConfig("127.0.0.1:9092", "quickstart", "kafka-scheduler");
 		try (KafkaScheduler scheduler = new KafkaScheduler(cfg)) {
 			scheduler.start();
+			scheduler.sendLater("k".getBytes(StandardCharsets.UTF_8),
+					"v".getBytes(StandardCharsets.UTF_8),
+					"target",
+					Duration.ofSeconds(10));
 			TimeUnit.SECONDS.sleep(60);
 		}
 	}
