@@ -17,6 +17,7 @@ class TimeRangesTest {
 			"3, PT4S",
 			"4, PT8S",
 			"5, PT16S",
+			"10, PT512S",
 	})
 	public void smoke(int bucketIdx, Duration expected) throws Exception{
 		//given
