@@ -29,8 +29,8 @@ public class KafkaScheduler implements MessageScheduler {
 		log.info("Starting. Configuration={}", cfg);
 		try (KafkaConsumer<String, String> consumer = consumer()) {
 			int count = consumer.partitionsFor(cfg.getTopic()).size();
-			log.info("Starting workers. Partitions={}", count);
-			timeRanges = new TimeRanges(count);
+			timeRanges = new TimeRanges(count, cfg.getTimeRange());
+			log.info("Starting workers. Partitions={}, timeRanges={}", count, timeRanges);
 			scanners.addAll(buildScanners(count));
 		}
 		this.producer = producer();

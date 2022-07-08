@@ -5,13 +5,16 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.IntStream;
 
+import lombok.ToString;
+
+@ToString
 class TimeRanges {
 
 	private final List<Duration> thresholds;
 
-	TimeRanges(int buckets) {
+	TimeRanges(int buckets, TimeRangeConfig cfg) {
 		List<Duration> thresholds = IntStream.range(0, buckets)
-				.mapToObj(bucket -> Duration.ofMillis((int) Math.round(1000 * Math.pow(2, bucket))))
+				.mapToObj(bucket -> Duration.ofMillis(Math.round(cfg.getFirstRange().toMillis() * Math.pow(cfg.getMultiplier(), bucket))))
 				.toList();
 		this.thresholds = new CopyOnWriteArrayList<>(thresholds);
 	}
@@ -31,4 +34,5 @@ class TimeRanges {
 		}
 		return new Bucket(thresholds.size());
 	}
+
 }

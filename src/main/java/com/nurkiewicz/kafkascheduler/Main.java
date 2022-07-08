@@ -11,7 +11,8 @@ public class Main {
 	private static final Logger log = org.slf4j.LoggerFactory.getLogger(java.lang.invoke.MethodHandles.lookup().lookupClass());
 
 	public static void main(String[] args) throws InterruptedException {
-		SchedulerConfig cfg = new SchedulerConfig("127.0.0.1:9092", "quickstart", "kafka-scheduler");
+		SchedulerConfig cfg = SchedulerConfig.defaults()
+				.withTopic("quickstart");
 		try (KafkaScheduler scheduler = new KafkaScheduler(cfg)) {
 			scheduler.start();
 			scheduler.sendLater("k".getBytes(StandardCharsets.UTF_8),
