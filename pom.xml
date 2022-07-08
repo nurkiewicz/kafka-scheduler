@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>7.0.1-ccs</version>
+            <version>7.2.0-ce</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
