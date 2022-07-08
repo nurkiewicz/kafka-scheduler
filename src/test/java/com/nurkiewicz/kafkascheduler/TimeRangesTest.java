@@ -2,23 +2,28 @@ package com.nurkiewicz.kafkascheduler;
 
 import java.time.Duration;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TimeRangesTest {
 
-	@Test
-	public void smoke() throws Exception{
+	@ParameterizedTest
+	@CsvSource({
+			"0, PT0S",
+			"1, PT1S",
+			"2, PT2S",
+			"3, PT4S",
+			"4, PT8S",
+			"5, PT16S",
+	})
+	public void smoke(int bucketIdx, Duration expected) throws Exception{
 		//given
 		TimeRanges ranges = new TimeRanges(10, new TimeRangeConfig(Duration.ofSeconds(1), 2));
 
 		//then
-		assertThat(ranges.startThresholdFor(new Bucket(0))).isEqualTo(Duration.ofSeconds(0));
-		assertThat(ranges.startThresholdFor(new Bucket(1))).isEqualTo(Duration.ofSeconds(1));
-		assertThat(ranges.startThresholdFor(new Bucket(2))).isEqualTo(Duration.ofSeconds(2));
-		assertThat(ranges.startThresholdFor(new Bucket(3))).isEqualTo(Duration.ofSeconds(4));
-		assertThat(ranges.startThresholdFor(new Bucket(4))).isEqualTo(Duration.ofSeconds(8));
+		assertThat(ranges.startThresholdFor(new Bucket(bucketIdx))).isEqualTo(expected);
 	}
 
 }
