@@ -54,7 +54,7 @@ E.g. bucket 4 (range 8-16s), is only examined once every 8 seconds.
 We can be almost sure that all messages in that bucket have a deadline of at least 8 seconds.
 So polling every 8 seconds is fine.
 
-When scanning discovers our message after 8 seconds, there is just 1.2 seconds left to the deadline.
+When scanner process discovers our message after about 8 seconds, there is still 1.2 seconds left to the deadline.
 At this point, the message is sent to bucket 1 (range 1-2 seconds).
 The process repeats.
 However, bucket 1 is obviously examined more frequently.
@@ -66,6 +66,8 @@ Bucket 0 is examined quite frequently, so it's possible that our message will be
 In that case the message is transferred back to bucket 0 - but at the end of it.
 In the meantime, other messages may be eligible for delivery, reaching their respective deadline.
 
+When scanning of time bucket 0 reaches our message after its deadline, it is sent to destination and forgotten.
+
 # API
 
 The API is straightforward:
@@ -76,3 +78,21 @@ public interface MessageScheduler extends AutoCloseable {
 	
 }
 ```
+
+# Time bucket sizing
+
+The number and the size of each time bucket is quite hard to determine.
+Heuristically I chose 0-1 seconds for the first bucket.
+The last bucket covers the range starting from 1 year up to infinity.
+The range of each intermediate bucket is growing exponentially.
+
+More buckets means less messages to process and in each iteration and greater horizontal scalability.
+On the other hand, messages will be transferred between buckets more frequently, until they reach bucket 0.
+
+Also, assuming that the last bucket covers the range from 1 year to infinity is quite arbitrary.
+After all, your workloads may be quite different.
+This will result in partition size imbalance.
+If all your messages are always scheduled much earlier, further partitions will be empty.
+On the other hand, if you keep scheduling messages many months or years in advance, only the last partitions will be used most of the time.
+
+Thus I plan to create a dynamic...
