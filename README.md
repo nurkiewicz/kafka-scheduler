@@ -15,15 +15,25 @@ Example scenarios:
 * delete PII in 2 years
 * ...
 
-Only when a certain deadline is reached, message should be sent.
+Only when a certain deadline is reached, message should be sent to destination topic.
 
+# Project goals
 
-# How does it work
+The purpose of this toy project is to implement a scheduler purely on top of Kafka.
+Processing messages should be possible on multiple nodes (horizontal scalability).
+I am aware of enterprise-ready schedulers like [Quartz](https://www.quartz-scheduler.org/) or [Apache Airflow](https://airflow.apache.org/).
+However, I wanted to experiment and see whether Kafka can be used as a general-purpose database for tasks.
 
-The naive approach is simply sending messages to the `pending` topic and continuously scan that topic.
+Obviously, by default, Kafka only reads messages sequentially and continuously. 
+Yet, you can use some low-level APIs to poll partitions less frequently.
+This, combined with carefully indexing jobs by time, can actually lead to fairly performant solution.
+
+# How does it work?
+
+The naive approach is simply sending messages to the `pending` topic and continuously scanning that topic.
 If a message reached its deadline, it is delivered to target topic.
-Otherwise, this message is sent back to a `pending` topic.
-Such an implementation abuses system resources.
+Otherwise, this message is sent back to the end of the `pending` topic.
+Such an implementation abuses system resources heavily.
 The same message is re-processed hundreds of times.
 Especially if the deadline is far from now.
 
@@ -39,8 +49,9 @@ Each partition holds only messages with a deadline in a specific range, e.g.:
 | 3         |   4s | 8s  |
 | 4         |   8s | 16s |
 | 5         |  16s | 32s |
+| 6         |  32s | 64s |
 | ...       |  ... | ... |
-| 9         | 256s | +∞  |
+| 10        | 512s | +∞  |
 
 As you can see each partition, known as *time bucket* holds a different time range.
 The time ranges are exponentially growing.
@@ -95,4 +106,5 @@ This will result in partition size imbalance.
 If all your messages are always scheduled much earlier, further partitions will be empty.
 On the other hand, if you keep scheduling messages many months or years in advance, only the last partitions will be used most of the time.
 
-Thus I plan to create a dynamic...
+Thus, I plan to create a dynamic policy, adjusting time bucket sizes depending on their occupancy.
+Basically, if any time bucket becomes too crowded, its size will shrink, in favour of all surrounding buckets.
