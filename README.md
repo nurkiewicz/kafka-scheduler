@@ -90,7 +90,7 @@ public interface MessageScheduler extends AutoCloseable {
 }
 ```
 
-# Time bucket sizing
+# Time bucket sizing considerations
 
 The number and the size of each time bucket is quite hard to determine.
 Heuristically I chose 0-1 seconds for the first bucket.
@@ -108,3 +108,8 @@ On the other hand, if you keep scheduling messages many months or years in advan
 
 Thus, I plan to create a dynamic policy, adjusting time bucket sizes depending on their occupancy.
 Basically, if any time bucket becomes too crowded, its size will shrink, in favour of all surrounding buckets.
+
+# Retention
+
+In Kafka, retention policy (via `log.retention.hours` or `log.retention.bytes` properties) is defined per topic.
+This means we can't define longer storage for time buckets far in the future and very short retention for short-term time buckets.
